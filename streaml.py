@@ -3,6 +3,7 @@ import os
 from time import sleep
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 import numpy as np
+import io, base64
 
 
 USERS = os.getenv('USERS')
@@ -63,7 +64,10 @@ if st.session_state.logged_in == True:
     #empty()
     with ph.container():
         #im = st.image("pic1.jpg")
-        im = Image.open("pic1.jpg")
+        image_name = "pic_aqua.png"
+        #im = Image.open("pic1.jpg")
+        giant_str = st.secrets["pics"][image_name.split(".")[0]]
+        im = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str, "utf-8")))
         st.write(im.size)
         draw = ImageDraw.Draw(im)
         font = ImageFont.truetype("credit-card.regular.ttf", 15)
