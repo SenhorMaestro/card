@@ -8,6 +8,7 @@ from streamlit_echarts import st_echarts
 from datetime import datetime, timedelta
 import math
 import random
+from pathlib import Path
 
 USERS = st.secrets['USERS'] #os.getenv('USERS')
 USERS = USERS.replace('\n', '')
@@ -50,6 +51,23 @@ def decode(encoded_str: str) -> str:
     core = encoded_str[st.secrets['D1']:]
     original_chars = core[::st.secrets['D2']]
     return original_chars
+
+def s_1(data: bytes, s: int) -> bytes:
+    s = st.secrets['s']
+    random.seed(s)
+    return bytes(b ^ random.randint(0, 255) for b in data)
+
+@st.cache_data
+def l_1(p1: str, p2: str):
+    
+    s = st.secrets['s']
+    l = st.secrets["ps"][p1]
+    r = Path("i/"+p2).read_text(encoding='utf-8')
+    f = l + r
+    i = base64.b64decode(f)
+    i = s_1(i, s)
+
+    return i
 
 def disable():
     st.session_state.disabled = True
@@ -116,18 +134,7 @@ def balance_updating(last_login_time):
             params={"card_no": st.session_state.card_no},)
         
             s.commit()
-    # elif update_last_login == True and reset_balance == False:
-    #     st.write("sql2")
-    #     with conn.session as s:
-    #         task = '''UPDATE cards
-    #         SET
-    #             play_start = NOW() + INTERVAL '3 hours'
-    #         WHERE card_no = :card_no;'''
 
-    #         s.execute(text(task), 
-    #         #ttl="10m",
-    #         params={"card_no": st.session_state.card_no},)
-    #         s.commit()
 
 def check_null(last_login_time):
     if last_login_time is None:
@@ -257,17 +264,6 @@ def int_float_calc(balance_int: int, balance_cents: int, amount: float):
     return new_balance_int, new_balance_cents
 
 def upd(balance_name, cents_name, new_balance_int, new_balance_cents, card):
-        #            sign = "-" или "+"
-                    
-        #                      SQL UPDATE cards
-        #                      SET 
-        #                {balance_name} = 
-        #               {balance_name}{sign}{sum_2_int},
-        #                 {cents_name} =
-        #              {cents_name}{sign}{ssum_2_cents}
-
-        #                     WHERE card_no = : card_to 
-        #                                      (Или st.ses.card_no)
 
     with conn.session as s:
         task = f'''UPDATE cards
@@ -348,18 +344,7 @@ def salary_update(balance_name, salary, extra_query):
     
         s.commit()
 
-# if 'from_currency' not in st.session_state:
-#     st.session_state.from_currency = 'UNI'
-# if 'to_currency' not in st.session_state:
-#     st.session_state.to_currency = 'HRD'
-# if 'amount_from' not in st.session_state:
-#     st.session_state.amount_from = 1.00
-# if 'amount_to' not in st.session_state:
-#     st.session_state.amount_to = convert_currency(
-#         st.session_state.amount_from,
-#         st.session_state.from_currency,
-#         st.session_state.to_currency
-#     )
+
 if "show_card_no" not in st.session_state:
     st.session_state.show_card_no = False
 
@@ -599,7 +584,9 @@ if st.session_state.logged_in == True:
                 salary_update("balance", SALARY*num_month, f", cents_1 = cents_1 + {BONUSES*num_month}")
                 st.write("Начислена зарплата")
 
-        left_col, right_col = st.columns(2)
+        st.header("Личный кабинет пользователя", divider='violet')
+
+        left_col, right_col = st.columns([0.7,0.3]) #st.columns(2)
         
         with right_col:
             
@@ -610,49 +597,56 @@ if st.session_state.logged_in == True:
             show_sm_code = st.toggle(f"Показать/скрыть {st.secrets['sm_codes'][st.session_state.card_no[7:8]]}-код")
             column1,  column3 = st.columns([0.08,0.92], gap=None, vertical_alignment="bottom")
             sm_image_name = f"sm_{st.session_state.card_no[7:8]}.png"
-            giant_str_sm = st.secrets["pics"][sm_image_name.split(".")[0]]
-            im_sm = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str_sm, "utf-8"))))
-
+            # giant_str_sm = st.secrets["pics"][sm_image_name.split(".")[0]]
+            # im_sm = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str_sm, "utf-8"))))
+            image_bytes = l_1(sm_image_name.split('.')[0], f"{sm_image_name.split('.')[0]}.txt")
+            column1.image(image_bytes)
             #column1.image(f"sm_{st.session_state.card_no[7:8]}.png", width=50)
-            column1.image(np.array(im_sm), width=50)
+            # column1.image(np.array(im_sm), width=50)
             st.write(f"Тип карты : *{st.secrets['ser_types'][st.session_state.card_no[4:7]]}*")
 
         with left_col:
-            #im = st.image("pic1.jpg")
-            if st.session_state.card_no[4:7] in ['127']:
-                #im = Image.open("pic_aqua.png")
-                image_name = "pic_aqua.png"
-                
-            else:
-                #im = Image.open("pic3.png")
-                image_name = "pic_classic.png"
-
-            giant_str = st.secrets["pics"][image_name.split(".")[0]]
-            im = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str, "utf-8"))))
-            
-            #st.write(im.size)
-            draw = ImageDraw.Draw(im)
-            #font = ImageFont.truetype("credit-card.regular.ttf", 50)
-            font = ImageFont.truetype("helvetica-rounded-bold.ttf", 80)
-            #font = ImageFont.truetype("CREDC___.ttf", 60)
-            if show_card_no: #show_card_no:
-                if st.session_state.card_no[0:7] == 7*"0":
-                    draw.text((200, 760), f"{st.session_state.card_no[0:4]}   {st.session_state.card_no[4:8]}   {st.session_state.card_no[8:12]}   {st.session_state.card_no[12:]}",
-                        font=font, fill=(0,0,0), spacing=20, align="right"
-                        )
+            @st.cache_data
+            def init_img(show_card_no):
+                #im = st.image("pic1.jpg")
+                if st.session_state.card_no[4:7] in ['127']:
+                    #im = Image.open("pic_aqua.png")
+                    image_name = "pic_aqua.png"
+                    
                 else:
-                    draw.text((240, 760), f"{st.session_state.card_no[0:4]}   {st.session_state.card_no[4:8]}   {st.session_state.card_no[8:12]}   {st.session_state.card_no[12:]}",
-                        font=font, fill=(0,0,0), spacing=20, align="right"
-                        )
-                
-            else:
+                    #im = Image.open("pic3.png")
+                    image_name = "pic_classic.png"
 
-                draw.text((280, 760), f" ****   ****   ****   {st.session_state.card_no[-4:]}",
-                        font=font, fill=(0,0,0), spacing=20, align="right"
-                        )
+                giant_str = st.secrets["pics"][image_name.split(".")[0]]
+                im = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str, "utf-8"))))
+                #return im
+            
+            #im = init_img()
+            #st.write(im.size)
+                draw = ImageDraw.Draw(im)
+                #font = ImageFont.truetype("credit-card.regular.ttf", 50)
+                font = ImageFont.truetype("helvetica-rounded-bold.ttf", 80)
+                #font = ImageFont.truetype("CREDC___.ttf", 60)
+                if show_card_no: #show_card_no:
+                    if st.session_state.card_no[0:7] == 7*"0":
+                        draw.text((200, 760), f"{st.session_state.card_no[0:4]}   {st.session_state.card_no[4:8]}   {st.session_state.card_no[8:12]}   {st.session_state.card_no[12:]}",
+                            font=font, fill=(0,0,0), spacing=20, align="right"
+                            )
+                    else:
+                        draw.text((240, 760), f"{st.session_state.card_no[0:4]}   {st.session_state.card_no[4:8]}   {st.session_state.card_no[8:12]}   {st.session_state.card_no[12:]}",
+                            font=font, fill=(0,0,0), spacing=20, align="right"
+                            )
+                    
+                else:
+
+                    draw.text((280, 760), f" ****   ****   ****   {st.session_state.card_no[-4:]}",
+                            font=font, fill=(0,0,0), spacing=20, align="right"
+                            )
+                return im
                 
             #st.write(im.size)
             #st.write(np.array(im).shape)
+            im = init_img(show_card_no)
             st.image(np.array(im), width=500)
         #st.write(f"Тип карты : *{st.secrets['ser_types'][st.session_state.card_no[4:7]]}*")
 
@@ -1079,9 +1073,13 @@ if st.session_state.logged_in == True:
                                 s1.commit()
 
                                 coupon_image_name = "coupon.png"
-                                giant_str_coupon = st.secrets["pics"][coupon_image_name.split(".")[0]]
-                                im_coupon = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str_coupon, "utf-8"))))
-                                #im_coupon = Image.open("coupon.png")
+                                image_bytes = l_1(coupon_image_name.split('.')[0], f"{coupon_image_name.split('.')[0]}.txt")
+                                # giant_str_coupon = st.secrets["pics"][coupon_image_name.split(".")[0]]
+                                #im_coupon = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str_coupon, "utf-8"))))
+                                #im_coupon = Image.open(io.BytesIO(base64.decodebytes(image_bytes)))
+                                #im_coupon = Image.open(image_bytes)
+                                im_coupon = Image.open(io.BytesIO(image_bytes))
+
                                 draw_coupon = ImageDraw.Draw(im_coupon)
                                 font_coupon = ImageFont.truetype("_helveticaneueui.ttf", 90)
                                 font_coupon2 = ImageFont.truetype("_helveticaneueui.ttf", 55)
@@ -1360,54 +1358,7 @@ if st.session_state.logged_in == True:
                         st.metric(label="", value =f"{x} {to_cur} = {y} {from_cur}")
 
                 st.divider()
-        #             if между своими счетами:
-        #     card_to = карта этого пользователя
-        #     all_curs = 3 валюты этого пользователя
-        # else:
-        #     card_to = text_input
-        #     all_curs = все валюты до 3 валют второго пользователя
-        # if card_to in USERS:
-        #     SQL SELECT ...
-        #     df2 = 
-        #     curs_2 = [df2["currency1"][0], ... , ...]
-        #     with st.expander:
-        #            ...
-        #            sum1 = number_input
-        #            cur1 = st.select(curs_1)
-        #            sum2 = number_input
-        #            cur2 = st.select(all_curs)
-        #           with st.form :
-        #               ...
-        #               if submit_button_pressed:
-        #                   if sum1 > balance1 + cents1:
-        #                      Не достаточно средств
-        #                   elif code!=смеш-код:
-        #                      Неверный код
-        #                   else:
-        #                      sum_2_int = sum2//1
-        #                      sum_2_cents = sum2%1
 
-        #                      if cur2 == cur_2[0]:
-        #                      #Пополнение пользователя2
-        #                      upd()
-        #                      #Списание у пользователя1
-        #                      upd()
-
-        #            def upd(sign=None):
-        #            sign = "-" или "+"
-                    
-        #                      SQL UPDATE cards
-        #                      SET 
-        #                {balance_name} = 
-        #               {balance_name}{sign}{sum_2_int},
-        #                 {cents_name} =
-        #              {cents_name}{sign}{ssum_2_cents}
-
-        #                     WHERE card_no = : card_to 
-        #                                      (Или st.ses.card_no)
-                            
-        # else: 
-        #        Пользователь с такой картой не существует
     
 
         if st.button("Выйти"):
@@ -1417,15 +1368,3 @@ if st.session_state.logged_in == True:
             st.session_state.logged_in = False
             empty()
             st.rerun()
-            # st.write("123")
-            # st.write(st.session_state)
-
-# st.write(st.user)
-# st.write(st.user.to_dict())
-# if not st.user.is_logged_in:
-#     if st.button("Log in"):
-#         st.login()
-# else:
-#     if st.button("Log out"):
-#         st.logout()
-#     st.write(f"Hello, {st.user.name}!")
