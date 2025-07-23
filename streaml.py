@@ -10,6 +10,13 @@ import math
 import random
 from pathlib import Path
 
+st.markdown("""
+<style>
+    * {
+       overflow-anchor: none !important;
+       }
+</style>"""", unsafe_allow_html=True)
+
 USERS = st.secrets['USERS'] #os.getenv('USERS')
 USERS = USERS.replace('\n', '')
 
