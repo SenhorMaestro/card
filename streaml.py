@@ -607,7 +607,7 @@ if st.session_state.logged_in == True:
             # giant_str_sm = st.secrets["pics"][sm_image_name.split(".")[0]]
             # im_sm = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str_sm, "utf-8"))))
             image_bytes = l_1(sm_image_name.split('.')[0], f"{sm_image_name.split('.')[0]}.txt")
-            column1.image(image_bytes, width=50, use_container_width=True)
+            column1.image(image_bytes, use_container_width=True)
             #column1.image(f"sm_{st.session_state.card_no[7:8]}.png", width=50)
             # column1.image(np.array(im_sm), width=50)
             st.write(f"Тип карты : *{st.secrets['ser_types'][st.session_state.card_no[4:7]]}*")
