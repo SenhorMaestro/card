@@ -613,7 +613,7 @@ if st.session_state.logged_in == True:
             new_width = 50
             new_height = int(new_width * image.height / image.width)
             resized_image = image.resize((new_width, new_height), Image.LANCZOS)
-            column1.image(resized_image)
+            column1.image(resized_image, use_container_width=True)
            
             #column1.image(image_bytes, use_container_width=True)
             #column1.image(f"sm_{st.session_state.card_no[7:8]}.png", width=50)
