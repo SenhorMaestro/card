@@ -593,7 +593,7 @@ if st.session_state.logged_in == True:
 
         st.header("Личный кабинет пользователя", divider='violet')
 
-        left_col, right_col = st.columns([0.7,0.3]) #st.columns(2)
+        left_col, right_col = st.columns([0.5,0.5]) #st.columns(2)
         
         with right_col:
             
