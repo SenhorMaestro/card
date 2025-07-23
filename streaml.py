@@ -15,7 +15,7 @@ st.markdown("""
     * {
        overflow-anchor: none !important;
        }
-</style>"""", unsafe_allow_html=True)
+</style>""", unsafe_allow_html=True)
 
 USERS = st.secrets['USERS'] #os.getenv('USERS')
 USERS = USERS.replace('\n', '')
