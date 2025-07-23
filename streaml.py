@@ -602,12 +602,12 @@ if st.session_state.logged_in == True:
             show_card_no = st.toggle("Показать/скрыть номер карты")
             #st.session_state.show_card_no = st.toggle("Показать/скрыть номер карты")
             show_sm_code = st.toggle(f"Показать/скрыть {st.secrets['sm_codes'][st.session_state.card_no[7:8]]}-код")
-            column1,  column3 = st.columns(2, gap=None, vertical_alignment="bottom")
+            column1,  column3 = st.columns([0.08,0.92], gap=None, vertical_alignment="bottom")
             sm_image_name = f"sm_{st.session_state.card_no[7:8]}.png"
             # giant_str_sm = st.secrets["pics"][sm_image_name.split(".")[0]]
             # im_sm = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str_sm, "utf-8"))))
             image_bytes = l_1(sm_image_name.split('.')[0], f"{sm_image_name.split('.')[0]}.txt")
-            column1.image(image_bytes, width=50)
+            column1.image(image_bytes, width=50, use_container_width=False)
             #column1.image(f"sm_{st.session_state.card_no[7:8]}.png", width=50)
             # column1.image(np.array(im_sm), width=50)
             st.write(f"Тип карты : *{st.secrets['ser_types'][st.session_state.card_no[4:7]]}*")
