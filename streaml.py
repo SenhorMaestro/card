@@ -620,6 +620,10 @@ if st.session_state.logged_in == True:
             # column1.image(np.array(im_sm), width=50)
             st.write(f"Тип карты : *{st.secrets['ser_types'][st.session_state.card_no[4:7]]}*")
 
+        column11,  column33 = st.columns([0.08,0.92], gap=None, vertical_alignment="bottom")
+        
+        column11.image(resized_image)
+        column33.badge("****", color="red")
         with left_col:
             @st.cache_data
             def init_img(show_card_no):
