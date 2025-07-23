@@ -607,15 +607,15 @@ if st.session_state.logged_in == True:
             # giant_str_sm = st.secrets["pics"][sm_image_name.split(".")[0]]
             # im_sm = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str_sm, "utf-8"))))
             image_bytes = l_1(sm_image_name.split('.')[0], f"{sm_image_name.split('.')[0]}.txt")
-            image = Image.open(io.BytesIO(image_bytes))
+            # image = Image.open(io.BytesIO(image_bytes))
 
-            # Изменяем размер изображения, сохраняя пропорции
-            new_width = 50
-            new_height = int(new_width * image.height / image.width)
-            resized_image = image.resize((new_width, new_height), Image.LANCZOS)
-            column1.image(resized_image, width=50)
+            # # Изменяем размер изображения, сохраняя пропорции
+            # new_width = 50
+            # new_height = int(new_width * image.height / image.width)
+            # resized_image = image.resize((new_width, new_height), Image.LANCZOS)
+            # column1.image(resized_image, width=50)
            
-            #column1.image(image_bytes, use_container_width=True)
+            column1.image(image_bytes, width=50, ) #use_container_width=True)
             #column1.image(f"sm_{st.session_state.card_no[7:8]}.png", width=50)
             # column1.image(np.array(im_sm), width=50)
             st.write(f"Тип карты : *{st.secrets['ser_types'][st.session_state.card_no[4:7]]}*")
@@ -667,11 +667,7 @@ if st.session_state.logged_in == True:
 
         expander = st.expander("Подробнее о карте")
         expander.write(st.secrets['bios'][st.session_state.card_no[4:7]])
-        st.write("badge")
-        column11,  column33 = st.columns([0.08,0.92], gap=None, vertical_alignment="bottom")
-        
-        column11.image(resized_image)
-        column33.badge("****", color="red")
+
         balance_left_col, balance_right_col = st.columns(2)
 
         with balance_right_col:
