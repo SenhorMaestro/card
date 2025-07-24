@@ -1147,59 +1147,65 @@ if st.session_state.logged_in == True:
                             st.session_state.to_currency
                         )
 
-                    with st.expander("Детали конвертации", expanded=True):
+                    @st.fragment
+                    def convertation_expander():
+                        with st.expander("Детали конвертации", expanded=True):
 
-                        col1, col2 = st.columns(2)
+                            col1, col2 = st.columns(2)
 
-                        with col1:
-                            cur1 = st.selectbox(
-                                'Валюта отправителя',
-                                options=curs_1,
-                                key='from_currency',
-                                on_change=on_from_currency_change
-                            )
-                        with col2:
-                            cur2 = st.selectbox(
-                                'Валюта получателя',
-                                options=curs_2,
-                                key='to_currency',
-                                on_change=on_to_currency_change
-                            )
+                            with col1:
+                                cur1 = st.selectbox(
+                                    left_header,
+                                    options=curs_1,
+                                    key='from_currency',
+                                    on_change=on_from_currency_change
+                                )
+                            with col2:
+                                cur2 = st.selectbox(
+                                    right_header,
+                                    options=curs_2,
+                                    key='to_currency',
+                                    on_change=on_to_currency_change
+                                )
 
-                        with col1:
-                            am1 = st.number_input(
-                                label=f"Сумма в {st.session_state.from_currency}",
-                                #min_value=1,
-                                #step=0.01,
-                                value=st.session_state.amount_from,  #важно!!!
-                                format="%.2f",
-                                key='amount_from',
-                                on_change=on_amount_from_change
-                            )
-                        with col2:
-                            am2 = st.number_input(
-                                label=f"Сумма в {st.session_state.to_currency}",
-                                value=convert_currency(am1, cur1, cur2),#1.00,
-                                #min_value=1,
-                                #step=0.01,
-                                format="%.2f",
-                                key='amount_to',
-                                on_change=on_amount_to_change
-                            )
-                        with col2:
-                            verif_code =  st.text_input('Введите ваш смешарик-код :', '', placeholder='ваш код',
-                                                 max_chars=4,
-                                                 type="password")
-                        losses = am1-convert_currency_real(am2, cur2, cur1)
-                        st.caption(f"Ваши потери составляют : {am1:.2f}-{convert_currency_real(am2, cur2, cur1)}={losses} {cur1}")
-                        if losses==0:
-                            st.caption(":green[Отлично. Переведём без потерь]")
-                        else:
-                            st.caption("Мы не взимаем комиссию и не возьмём эти деньги , они не достанутся ни вам , ни нам , ни получателю. Чтобы избежать потерь старайтесь выбирать переводы в целых числах")
+                            with col1:
+                                am1 = st.number_input(
+                                    label=f"Сумма в {st.session_state.from_currency}",
+                                    #min_value=1,
+                                    #step=0.01,
+                                    value=st.session_state.amount_from,  #важно!!!
+                                    format="%.2f",
+                                    key='amount_from',
+                                    on_change=on_amount_from_change
+                                )
+                            with col2:
+                                am2 = st.number_input(
+                                    label=f"Сумма в {st.session_state.to_currency}",
+                                    value=convert_currency(am1, cur1, cur2),#1.00,
+                                    #min_value=1,
+                                    #step=0.01,
+                                    format="%.2f",
+                                    key='amount_to',
+                                    on_change=on_amount_to_change
+                                )
+                            with col2:
+                                verif_code =  st.text_input('Введите ваш смешарик-код :', '', placeholder='ваш код',
+                                                    max_chars=4,
+                                                    type="password")
+                            losses = am1-convert_currency_real(am2, cur2, cur1)
+                            st.caption(f"Ваши потери составляют : {am1:.2f}-{convert_currency_real(am2, cur2, cur1)}={losses} {cur1}")
+                            if losses==0:
+                                st.caption(":green[Отлично. Переведём без потерь]")
+                            else:
+                                st.caption("Мы не взимаем комиссию и не возьмём эти деньги , они не достанутся ни вам , ни нам , ни получателю. Чтобы избежать потерь старайтесь выбирать переводы в целых числах")
 
-                        st.caption("Курсы для справки:")
-                        st.caption(f"1 {cur1} = {convert_currency_real(1, cur1, cur2)} {cur2}")
-                        st.caption(f"{convert_currency_real(1, cur2, cur1)} {cur1} = 1 {cur2}")
+                            st.caption("Курсы для справки:")
+                            st.caption(f"1 {cur1} = {convert_currency_real(1, cur1, cur2)} {cur2}")
+                            st.caption(f"{convert_currency_real(1, cur2, cur1)} {cur1} = 1 {cur2}")
+
+                            return cur1, cur2, am1, am2, verif_code
+
+                    cur1, cur2, am1, am2, verif_code = convertation_expander()
 
                     if st.button('Выполнить перевод'):
                         total_1 = df["balance"][0]+df["cents_1"][0]/100
