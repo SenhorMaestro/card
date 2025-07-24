@@ -589,81 +589,76 @@ if st.session_state.logged_in == True:
                 # st.write((df['play_start'][0]).month)
                 num_month = diff_month(datetime.now(), df['play_start'][0])
                 salary_update("balance", SALARY*num_month, f", cents_1 = cents_1 + {BONUSES*num_month}")
-                st.write("Начислена зарплата")
+                st.toast("Начислена зарплата", icon='🎉')
+                st.balloons()
 
-        st.header("Личный кабинет пользователя", divider='violet')
+        st.header("Личный кабинет пользователя", divider='gray')
 
-        left_col, right_col = st.columns([0.5,0.5]) #st.columns(2)
-        
-        with right_col:
+        @st.fragment
+        def main_columns():
+            left_col, right_col = st.columns([0.65, 0.35]) 
             
-            #st.write(st.session_state.card_no)
-            #show_bal = st.toggle("Показать/скрыть баланс")
-            show_card_no = st.toggle("Показать/скрыть номер карты")
-            #st.session_state.show_card_no = st.toggle("Показать/скрыть номер карты")
-            show_sm_code = st.toggle(f"Показать/скрыть {st.secrets['sm_codes'][st.session_state.card_no[7:8]]}-код")
-            column1,  column3 = st.columns([0.08,0.92], gap=None, vertical_alignment="bottom")
-            sm_image_name = f"sm_{st.session_state.card_no[7:8]}.png"
-            # giant_str_sm = st.secrets["pics"][sm_image_name.split(".")[0]]
-            # im_sm = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str_sm, "utf-8"))))
-            image_bytes = l_1(sm_image_name.split('.')[0], f"{sm_image_name.split('.')[0]}.txt")
-            # image = Image.open(io.BytesIO(image_bytes))
-
-            # # Изменяем размер изображения, сохраняя пропорции
-            # new_width = 50
-            # new_height = int(new_width * image.height / image.width)
-            # resized_image = image.resize((new_width, new_height), Image.LANCZOS)
-            # column1.image(resized_image, width=50)
-           
-            column1.image(image_bytes, width=50, ) #use_container_width=True)
-            #column1.image(f"sm_{st.session_state.card_no[7:8]}.png", width=50)
-            # column1.image(np.array(im_sm), width=50)
-            st.write(f"Тип карты : *{st.secrets['ser_types'][st.session_state.card_no[4:7]]}*")
-
-        with left_col:
-            @st.cache_data
-            def init_img(show_card_no):
-                #im = st.image("pic1.jpg")
-                if st.session_state.card_no[4:7] in ['127']:
-                    #im = Image.open("pic_aqua.png")
-                    image_name = "pic_aqua.png"
-                    
-                else:
-                    #im = Image.open("pic3.png")
-                    image_name = "pic_classic.png"
-
-                giant_str = st.secrets["pics"][image_name.split(".")[0]]
-                im = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str, "utf-8"))))
-                #return im
-            
-            #im = init_img()
-            #st.write(im.size)
-                draw = ImageDraw.Draw(im)
-                #font = ImageFont.truetype("credit-card.regular.ttf", 50)
-                font = ImageFont.truetype("helvetica-rounded-bold.ttf", 80)
-                #font = ImageFont.truetype("CREDC___.ttf", 60)
-                if show_card_no: #show_card_no:
-                    if st.session_state.card_no[0:7] == 7*"0":
-                        draw.text((200, 760), f"{st.session_state.card_no[0:4]}   {st.session_state.card_no[4:8]}   {st.session_state.card_no[8:12]}   {st.session_state.card_no[12:]}",
-                            font=font, fill=(0,0,0), spacing=20, align="right"
-                            )
-                    else:
-                        draw.text((240, 760), f"{st.session_state.card_no[0:4]}   {st.session_state.card_no[4:8]}   {st.session_state.card_no[8:12]}   {st.session_state.card_no[12:]}",
-                            font=font, fill=(0,0,0), spacing=20, align="right"
-                            )
-                    
-                else:
-
-                    draw.text((280, 760), f" ****   ****   ****   {st.session_state.card_no[-4:]}",
-                            font=font, fill=(0,0,0), spacing=20, align="right"
-                            )
-                return im
+            with right_col:
                 
-            #st.write(im.size)
-            #st.write(np.array(im).shape)
-            im = init_img(show_card_no)
-            st.image(np.array(im), width=500)
-        #st.write(f"Тип карты : *{st.secrets['ser_types'][st.session_state.card_no[4:7]]}*")
+                show_card_no = st.toggle("Показать/скрыть номер карты")
+                
+                show_sm_code = st.toggle(f"Показать/скрыть {st.secrets['sm_codes'][st.session_state.card_no[7:8]]}-код")
+                column1,  column3 = st.columns([0.08,0.92], gap=None, vertical_alignment="bottom")
+                sm_image_name = f"sm_{st.session_state.card_no[7:8]}.png"
+
+                image_bytes = l_1(sm_image_name.split('.')[0], f"{sm_image_name.split('.')[0]}.txt")
+                
+                column1.image(image_bytes, width=50)
+
+                if show_sm_code:
+                    column3.badge(st.session_state.code, color="green", 
+                                )
+                else:
+                    column3.badge("****", color="red", 
+                                )
+
+
+                st.write(f"Тип карты : *{st.secrets['ser_types'][st.session_state.card_no[4:7]]}*")
+
+            with left_col:
+                @st.cache_data
+                def init_img(show_card_no, card_no): #card_no не используется, нужен только, чтобы для разных пользователей на одном устройстве не кешировался один вариант номера
+                    
+                    if st.session_state.card_no[4:7] in ['127']:
+                        image_name = "pic_aqua.png"
+                        
+                    else:
+                        image_name = "pic_classic.png"
+
+                    giant_str = st.secrets["pics"][image_name.split(".")[0]]
+                    im = Image.open(io.BytesIO(base64.decodebytes(bytes(giant_str, "utf-8"))))
+
+                    draw = ImageDraw.Draw(im)
+                    #font = ImageFont.truetype("credit-card.regular.ttf", 50)
+                    font = ImageFont.truetype("helvetica-rounded-bold.ttf", 80)
+                    #font = ImageFont.truetype("CREDC___.ttf", 60)
+                    if show_card_no: #show_card_no:
+                        if st.session_state.card_no[0:7] == 7*"0":
+                            draw.text((200, 760), f"{st.session_state.card_no[0:4]}   {st.session_state.card_no[4:8]}   {st.session_state.card_no[8:12]}   {st.session_state.card_no[12:]}",
+                                font=font, fill=(0,0,0), spacing=20, align="right"
+                                )
+                        else:
+                            draw.text((240, 760), f"{st.session_state.card_no[0:4]}   {st.session_state.card_no[4:8]}   {st.session_state.card_no[8:12]}   {st.session_state.card_no[12:]}",
+                                font=font, fill=(0,0,0), spacing=20, align="right"
+                                )
+                        
+                    else:
+
+                        draw.text((280, 760), f" ****   ****   ****   {st.session_state.card_no[-4:]}",
+                                font=font, fill=(0,0,0), spacing=20, align="right"
+                                )
+
+                    st.image(np.array(im), width=500)
+                    
+
+                init_img(show_card_no, st.session_state.card_no)
+
+        main_columns()
 
         expander = st.expander("Подробнее о карте")
         expander.write(st.secrets['bios'][st.session_state.card_no[4:7]])
@@ -1316,63 +1311,68 @@ if st.session_state.logged_in == True:
                 st.write("Карта получателя или магазин с таким номером не существует")
 
         elif selection == "Посмотреть курсы валют":
-            every_cur = [f'{i}, {st.secrets.cur[i]["forms"][4]}' for i in RATES.keys()]
+            @st.fragment
+            def cur_info():
+                every_cur = [f'{i}, {st.secrets.cur[i]["forms"][4]}' for i in RATES.keys()]
 
-            option = st.selectbox(
-                "Показать",
-                ["Все пары валют", "Мои валюты в переводе на другие валюты", 
-                 "Другие валюты в переводе на мои валюты"] + every_cur,
-            )
+                option = st.selectbox(
+                    "Показать",
+                    ["Все пары валют", "Мои валюты в переводе на другие валюты", 
+                    "Другие валюты в переводе на мои валюты"] + every_cur,
+                )
 
-            if option == "Все пары валют":
-                curs_left = RATES.keys()
-                curs_right = RATES.keys()
-            elif option =="Мои валюты в переводе на другие валюты":
-                curs_left = [df["currency"][0], df["currency_2"][0] , df["currency_3"][0]]
-                curs_right = RATES.keys()
-            elif option =="Другие валюты в переводе на мои валюты":
-                curs_left = RATES.keys() 
-                curs_right = [df["currency"][0], df["currency_2"][0] , df["currency_3"][0]]
-            else:
-                curs_left = [option[:3]]
-                curs_right = RATES.keys()
+                if option == "Все пары валют":
+                    curs_left = RATES.keys()
+                    curs_right = RATES.keys()
+                elif option =="Мои валюты в переводе на другие валюты":
+                    curs_left = [df["currency"][0], df["currency_2"][0] , df["currency_3"][0]]
+                    curs_right = RATES.keys()
+                elif option =="Другие валюты в переводе на мои валюты":
+                    curs_left = RATES.keys() 
+                    curs_right = [df["currency"][0], df["currency_2"][0] , df["currency_3"][0]]
+                else:
+                    curs_left = [option[:3]]
+                    curs_right = RATES.keys()
 
-            # for from_cur, rate_from in RATES.items():
-            #     for to_cur, rate_to in RATES.items():
-            for from_cur in curs_left:
-                st.subheader(f"{from_cur}")
-                st.caption(f"{st.secrets.cur[from_cur]['forms'][4]}")
-                cur_col1, cur_col2, = st.columns([1, 1])
-                with cur_col1:
-                    st.text(f"Прямой курс")
-                    for to_cur in curs_right:
-                
-                        if from_cur == to_cur:
-                            continue
-                        rate_from = RATES[from_cur]
-                        rate_to = RATES[to_cur]
+                # for from_cur, rate_from in RATES.items():
+                #     for to_cur, rate_to in RATES.items():
+                for from_cur in curs_left:
+                    st.subheader(f"{from_cur}")
+                    st.caption(f"{st.secrets.cur[from_cur]['forms'][4]}")
+                    cur_col1, cur_col2, = st.columns([1, 1])
+                    with cur_col1:
+                        st.text(f"Прямой курс")
+                        for to_cur in curs_right:
+                    
+                            if from_cur == to_cur:
+                                continue
+                            rate_from = RATES[from_cur]
+                            rate_to = RATES[to_cur]
 
-                        # Складываем пример: 1 USD = x EUR
-                        x = 1
-                        # Конвертируем 1 unit from_cur в to_cur по курсу
-                        y = round(rate_to / rate_from, 4)
-                        st.metric(label="", value =f"{x} {from_cur} = {y} {to_cur}")
-                with cur_col2:
-                    st.text(f"Обратный курс")
-                    for to_cur in curs_right:
-                
-                        if from_cur == to_cur:
-                            continue
-                        rate_from = RATES[from_cur]
-                        rate_to = RATES[to_cur]
+                            # Складываем пример: 1 USD = x EUR
+                            x = 1
+                            # Конвертируем 1 unit from_cur в to_cur по курсу
+                            y = round(rate_to / rate_from, 4)
+                            st.metric(label="", value =f"{x} {from_cur} = {y} {to_cur}")
+                    with cur_col2:
+                        st.text(f"Обратный курс")
+                        for to_cur in curs_right:
+                    
+                            if from_cur == to_cur:
+                                continue
+                            rate_from = RATES[from_cur]
+                            rate_to = RATES[to_cur]
 
-                        # Складываем пример: 1 USD = x EUR
-                        x = 1
-                        # Конвертируем 1 unit from_cur в to_cur по курсу
-                        y = round(rate_from / rate_to, 4)
-                        st.metric(label="", value =f"{x} {to_cur} = {y} {from_cur}")
+                            # Складываем пример: 1 USD = x EUR
+                            x = 1
+                            # Конвертируем 1 unit from_cur в to_cur по курсу
+                            y = round(rate_from / rate_to, 4)
+                            st.metric(label="", value =f"{x} {to_cur} = {y} {from_cur}")
 
-                st.divider()
+                    st.divider()
+
+            cur_info()
+
 
     
 
