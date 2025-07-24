@@ -741,19 +741,6 @@ if st.session_state.logged_in == True:
                         border=True)
                 
 
-        if show_sm_code:
-            #column3.metric('', st.session_state.code, border=True)
-            column3.badge(st.session_state.code, color="green", 
-                          #width="stretch"
-                          )
-            #column3.text(st.session_state.code)
-        else:
-            #column3.metric("", "****", border=True)
-            #column3.badge("****", color="green", width="stretch")
-            #column3.text("****")
-            column3.badge("****", color="red", 
-                          #width="stretch"
-                          )
         if st.session_state.card_no[4:7] in ['127']:
             st.subheader("От суточной нормы* :", divider='blue')
             liquidfill_option1 = {
