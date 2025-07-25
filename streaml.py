@@ -641,7 +641,7 @@ if st.session_state.logged_in == True:
 
                 image_bytes = l_1(sm_image_name.split('.')[0], f"{sm_image_name.split('.')[0]}.txt")
                 
-                column1.image(image_bytes, width=100)
+                column1.image(image_bytes, width=50)
 
                 if show_sm_code:
                     column3.badge(st.session_state.code, color="green", 
