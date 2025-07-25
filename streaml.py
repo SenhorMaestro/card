@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageColor
 import numpy as np
 from sqlalchemy.sql import text
 from streamlit_echarts import st_echarts
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import math
 import random
 from pathlib import Path
@@ -107,8 +107,8 @@ def form_noun(number, noun_forms):
     
 def balance_updating(last_login_time):
      
-    last_login_utc = last_login_time - timedelta(hours=3)
-    now_utc = datetime.now() - timedelta(hours=3)
+    last_login_utc = last_login_time - timedelta(hours=st.secrets['tzs']['hours_to_utc'])
+    now_utc = datetime.now() - timedelta(hours=st.secrets['tzs']['hours_to_utc'])
     if dev_mode:
         st.write(f"last_login_utc: {last_login_utc}")
         st.write(f"now_utc: {now_utc}")
@@ -130,9 +130,9 @@ def balance_updating(last_login_time):
         if dev_mode:
             st.write("sql1")
         with conn.session as s:
-            task = '''UPDATE cards
+            task = f'''UPDATE cards
             SET
-                play_start = NOW() + INTERVAL '3 hours',
+                play_start = NOW() + INTERVAL '{st.secrets['tzs']['HOURS']} hours',
                 balance = 0
             WHERE card_no = :card_no;'''
 
@@ -141,12 +141,23 @@ def balance_updating(last_login_time):
             params={"card_no": st.session_state.card_no},)
         
             s.commit()
+    # elif update_last_login == True and reset_balance == False:
+    #     st.write("sql2")
+    #     with conn.session as s:
+    #         task = '''UPDATE cards
+    #         SET
+    #             play_start = NOW() + INTERVAL '3 hours'
+    #         WHERE card_no = :card_no;'''
 
+    #         s.execute(text(task), 
+    #         #ttl="10m",
+    #         params={"card_no": st.session_state.card_no},)
+    #         s.commit()
 
 def check_null(last_login_time):
     if last_login_time is None:
         if st.session_state.card_no[4:7] in ['338']:
-            update_play_reg_query = f", play_reg = NOW() + INTERVAL '3 hours'"
+            update_play_reg_query = f", play_reg = NOW() + INTERVAL '{st.secrets['tzs']['HOURS']} hours'"
             second_balance_setting = f", second_balance = 0"
         else:
             update_play_reg_query = ''
@@ -156,7 +167,7 @@ def check_null(last_login_time):
         with conn.session as s:
             task = f'''UPDATE cards
             SET
-                play_start = NOW() + INTERVAL '3 hours'
+                play_start = NOW() + INTERVAL '{st.secrets['tzs']['HOURS']} hours'
                 {update_play_reg_query}
                 {second_balance_setting}
             WHERE card_no = :card_no 
@@ -271,6 +282,17 @@ def int_float_calc(balance_int: int, balance_cents: int, amount: float):
     return new_balance_int, new_balance_cents
 
 def upd(balance_name, cents_name, new_balance_int, new_balance_cents, card):
+        #            sign = "-" или "+"
+                    
+        #                      SQL UPDATE cards
+        #                      SET 
+        #                {balance_name} = 
+        #               {balance_name}{sign}{sum_2_int},
+        #                 {cents_name} =
+        #              {cents_name}{sign}{ssum_2_cents}
+
+        #                     WHERE card_no = : card_to 
+        #                                      (Или st.ses.card_no)
 
     with conn.session as s:
         task = f'''UPDATE cards
@@ -293,7 +315,7 @@ def success_transfer_classic(card_to, ammount, cur):
 
         Получатель : {card_to}  \n
 
-        Время : {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}  \n
+        Время : {(datetime.now() + timedelta(hours=st.secrets['tzs']['hours_to_local'])).strftime('%d.%m.%Y %H:%M:%S')}  \n
 
         Заскриньте этот чек, если он вам нужен, так как мы не храним информацию о переводах.  \n
 
@@ -313,7 +335,7 @@ def success_transfer(card_to, selection):
 
         Получатель : {card_to}  \n
 
-        Время : {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}  \n
+        Время : {(datetime.now() + timedelta(hours=st.secrets['tzs']['hours_to_local'])).strftime('%d.%m.%Y %H:%M:%S')}  \n
 
         Заскриньте этот чек, если он вам нужен, так как мы не храним информацию о переводах.  \n
 
@@ -328,7 +350,7 @@ def success_transfer(card_to, selection):
 
         Зачислено на счёт в {st.session_state.to_currency}: {st.session_state.amount_to} {st.session_state.to_currency}  \n
 
-        Время : {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}  \n
+        Время : {(datetime.now() + timedelta(hours=st.secrets['tzs']['hours_to_local'])).strftime('%d.%m.%Y %H:%M:%S')}  \n
 
         Заскриньте этот чек, если он вам нужен, так как мы не храним информацию о переводах.  \n
 
@@ -342,7 +364,7 @@ def salary_update(balance_name, salary, extra_query):
                 SET 
                 {balance_name} = {balance_name} + {salary}
                 {extra_query}
-                ,play_start = NOW() + INTERVAL '3 hours'
+                ,play_start = NOW() + INTERVAL '{st.secrets['tzs']['HOURS']} hours'
                 WHERE card_no = :card_no;'''
 
         s.execute(text(task), 
@@ -351,7 +373,18 @@ def salary_update(balance_name, salary, extra_query):
     
         s.commit()
 
-
+# if 'from_currency' not in st.session_state:
+#     st.session_state.from_currency = 'UNI'
+# if 'to_currency' not in st.session_state:
+#     st.session_state.to_currency = 'HRD'
+# if 'amount_from' not in st.session_state:
+#     st.session_state.amount_from = 1.00
+# if 'amount_to' not in st.session_state:
+#     st.session_state.amount_to = convert_currency(
+#         st.session_state.amount_from,
+#         st.session_state.from_currency,
+#         st.session_state.to_currency
+#     )
 if "show_card_no" not in st.session_state:
     st.session_state.show_card_no = False
 
@@ -596,19 +629,19 @@ if st.session_state.logged_in == True:
 
         @st.fragment
         def main_columns():
-            left_col, right_col = st.columns([0.65, 0.35]) 
+            left_col, right_col = st.columns([0.65, 0.35]) #st.columns(2)
             
             with right_col:
                 
                 show_card_no = st.toggle("Показать/скрыть номер карты")
                 
                 show_sm_code = st.toggle(f"Показать/скрыть {st.secrets['sm_codes'][st.session_state.card_no[7:8]]}-код")
-                column1,  column3 = st.columns([0.08,0.92], gap=None, vertical_alignment="bottom")
+                column1,  column3 = st.columns([0.10,0.90], gap=None, vertical_alignment="bottom")
                 sm_image_name = f"sm_{st.session_state.card_no[7:8]}.png"
 
                 image_bytes = l_1(sm_image_name.split('.')[0], f"{sm_image_name.split('.')[0]}.txt")
                 
-                column1.image(image_bytes, width=50)
+                column1.image(image_bytes, width=100)
 
                 if show_sm_code:
                     column3.badge(st.session_state.code, color="green", 
@@ -659,11 +692,12 @@ if st.session_state.logged_in == True:
                 init_img(show_card_no, st.session_state.card_no)
 
         main_columns()
+        #st.write(f"Тип карты : *{st.secrets['ser_types'][st.session_state.card_no[4:7]]}*")
 
         expander = st.expander("Подробнее о карте")
         expander.write(st.secrets['bios'][st.session_state.card_no[4:7]])
 
-        balance_left_col, balance_right_col = st.columns(2)
+        balance_left_col, balance_right_col = st.columns([0.65, 0.35])
 
         with balance_right_col:
             show_bal = st.toggle("Показать/скрыть баланс")
@@ -769,7 +803,7 @@ if st.session_state.logged_in == True:
                 # st.metric(label="Всего накоплено с момента регистрации:",
                 #         value=f"{df['second_balance'][0]} {form_noun(df['second_balance'][0], st.secrets.cur[df['currency'][0]]['forms'])}",
                 #         border=True)
-                avg = df['second_balance'][0] / (((datetime.now() - df['play_reg'][0])).days + 1)
+                avg = df['second_balance'][0] / (((datetime.now() + timedelta(hours=st.secrets['tzs']['hours_to_local']) - df['play_reg'][0])).days + 1)
                 st.metric(label="В среднем за день :",
                         value=f"{avg:.2f} {form_noun(avg, st.secrets.cur[df['currency'][0]]['forms'])}",
                         #delta=delta_str,
@@ -777,7 +811,7 @@ if st.session_state.logged_in == True:
                         border=True)
                 # st.write(delta_str)
                 # st.write(delta_str2)
-                days_since_reg = (((datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - (df['play_reg'][0]).replace(hour=0, minute=0, second=0, microsecond=0))).days + 1)
+                days_since_reg = ((((datetime.now() + timedelta(hours=st.secrets['tzs']['hours_to_local'])).replace(hour=0, minute=0, second=0, microsecond=0) - (df['play_reg'][0]).replace(hour=0, minute=0, second=0, microsecond=0))).days + 1)
                 delta_per_day = (8-avg)*days_since_reg
                 delta_total = 8*days_since_reg
                 if delta_per_day > 0:
@@ -1080,7 +1114,7 @@ if st.session_state.logged_in == True:
                                 draw_coupon = ImageDraw.Draw(im_coupon)
                                 font_coupon = ImageFont.truetype("_helveticaneueui.ttf", 90)
                                 font_coupon2 = ImageFont.truetype("_helveticaneueui.ttf", 55)
-                                draw_coupon.text((200, 150), f"{datetime.now().strftime('%d.%m.%Y %H:%M:%S')}",font=font_coupon, fill=(78,51,46))
+                                draw_coupon.text((200, 150), f"{(datetime.now() + timedelta(hours=st.secrets['tzs']['hours_to_local'])).strftime('%d.%m.%Y %H:%M:%S')}",font=font_coupon, fill=(78,51,46))
 
                                 draw_coupon.text((150, 250), f"Кол-во: {bonus_minus}",font=font_coupon, fill=(78,51,46))
 
@@ -1091,7 +1125,7 @@ if st.session_state.logged_in == True:
                                 draw_coupon.text((340, 500), f"Номер купона: {random.randint(10000,99999)}",font=font_coupon, fill=(78,51,46))
 
                                 st.image(np.array(im_coupon), width=500)
-                                st.success("""Успешно обменяли бонусы.  \nНЕ ЗАБУДЬТЕ СФОТОГРАФИРОВАТЬ ВАШ КУПОН ,  \nтак как мы не храним данные о переводах""")
+                                st.success("""Успешно обменяли бонусы.  \nНЕ ЗАБУДЬТЕ СФОТОГРАФИРОВАТЬ ваш купон ,  \nтак как мы не храним данные о переводах""")
 
                         else:
                             st.write("Недостаточно бонусов")
@@ -1115,8 +1149,12 @@ if st.session_state.logged_in == True:
 
             if selection == "Оплатить/Перевести валюту":
                 condition2 = card_to in [i.split("_")[0] for i in USERS.split(",")] and card_to != st.session_state.card_no
+                left_header = 'Валюта отправителя'
+                right_header = 'Валюта получателя'
             else: #"Перевести между своими счетами"
                 condition2 = True
+                left_header = 'Со счёта в'
+                right_header = 'На счёт в'
 
             if condition2: # and user_selected:
                 if card_to[4:7] in ['253', '111']:
@@ -1206,7 +1244,6 @@ if st.session_state.logged_in == True:
                             return cur1, cur2, am1, am2, verif_code
 
                     cur1, cur2, am1, am2, verif_code = convertation_expander()
-
                     if st.button('Выполнить перевод'):
                         total_1 = df["balance"][0]+df["cents_1"][0]/100
                         total_2 = df["second_balance"][0]+df["cents_2"][0]/100
@@ -1365,9 +1402,6 @@ if st.session_state.logged_in == True:
                     st.divider()
 
             cur_info()
-
-
-    
 
         if st.button("Выйти"):
             st.session_state.card_no = None
