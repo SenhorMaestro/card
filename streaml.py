@@ -421,7 +421,7 @@ if "value5" in st.query_params: #instant_plus_balance
     st.session_state.block_login_screen = True
     st.session_state.card_no = query_no
 
-    instant_ammount = st.query_params["value5"]
+    instant_ammount = decode(st.query_params["value5"])
 
     conn = st.connection("neon", type="sql")
 
