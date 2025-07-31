@@ -456,7 +456,7 @@ if "value5" in st.query_params: #instant_plus_balance
         
             s.commit()
 
-        st.write(f"Карта ****   ****   ****   {st.session_state.card_no[-4:]} успешно пополнена.")
+        st.text(f"Карта ****   ****   ****   {st.session_state.card_no[-4:]} успешно пополнена.")
 
         st.link_button("На главную", st.secrets["main_page"])
 
@@ -480,7 +480,7 @@ if "value5" in st.query_params: #instant_plus_balance
             
                 s.commit()
 
-            st.write(f"Начали отсчёт времени по карте ****   ****   ****   {st.session_state.card_no[-4:]}.")
+            st.text(f"Начали отсчёт времени по карте ****   ****   ****   {st.session_state.card_no[-4:]}.")
             st.link_button("В личный кабинет", f"{st.secrets['main_page']}/?value1={st.session_state.card_no}&value2={query_code}")
         else:
             #disabled =False
@@ -488,8 +488,10 @@ if "value5" in st.query_params: #instant_plus_balance
                 #with ph.container():
                 with ph.form("form0"):
 
-                        st.write("Для подтверждения остановки таймера требуется код взрослика")
-                        verif_code = st.text_input("Код", value="", type="password", 
+                        st.text("Для подтверждения остановки таймера требуется код взрослика")
+                        verif_code = st.text_input("Код", value="", type="password",
+                                                   placeholder="Код",
+                                                   label_visibility="hidden"
                                                 #disabled=disabled
                                                 #disabled=st.session_state.get("disabled", True)
                                                 #disabled=st.session_state.disabled
@@ -533,10 +535,10 @@ if "value5" in st.query_params: #instant_plus_balance
                             empty()
                         #else:
                         elif pressed and verif_code != st.secrets['VER2'][st.session_state.card_no]:
-                            st.write("Код взрослика не верный. Таймер не остановлен. Попробуйте ещё раз")
+                            st.text("Код взрослика неверный. Таймер не остановлен. Попробуйте ещё раз")
 
             if st.session_state.disabled == True:
-                    st.write(f"Успешно списали время по карте ****   ****   ****   {st.session_state.card_no[-4:]}.")
+                    st.text(f"Успешно списали время по карте ****   ****   ****   {st.session_state.card_no[-4:]}.")
                     st.link_button("В личный кабинет", f"{st.secrets['main_page']}/?value1={st.session_state.card_no}&value2={query_code}")
             
 
