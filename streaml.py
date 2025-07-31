@@ -486,7 +486,7 @@ if "value5" in st.query_params: #instant_plus_balance
             #disabled =False
             if st.session_state.disabled == False:
                 #with ph.container():
-                with ph.form("form0"):
+                with ph.form("form0", enter_to_submit=False):
 
                         st.text("Для подтверждения остановки таймера требуется код взрослика")
                         verif_code = st.text_input("Код", value="", type="password",
@@ -510,7 +510,7 @@ if "value5" in st.query_params: #instant_plus_balance
                         #             ):
                         pressed = st.form_submit_button("Подтвердить",
                                                         disabled=st.session_state.disabled,
-                                                        enter_to_submit=False)
+                                                        )
                         if pressed and verif_code == st.secrets['VER2'][st.session_state.card_no]:
                             with conn.session as s:
                                 task = f'''UPDATE cards
