@@ -685,7 +685,7 @@ if st.session_state.logged_in == True:
             
             #last_login_and_reset(last_login_time)
 
-        first_enter_block(last_login_time, df) 
+           first_enter_block(last_login_time, df) 
             
 
             # days_in_a_row_counter, should_update = days_in_a_row_bonus(last_login_time, df['cents_3'][0])
