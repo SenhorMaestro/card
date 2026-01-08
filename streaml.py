@@ -822,7 +822,7 @@ if st.session_state.logged_in == True:
                     st.metric(label="Бонусный баланс :", 
                         value=f"{df['third_balance'][0]} {form_noun(df['third_balance'][0], st.secrets.cur['BON']['forms'])}",
                         border=True)
-                    st.caption(f"Вы заходите {df['cents_3'][0]} {form_noun(df['cents_3'][0], st.secrets.cur['DAY']['forms'])}")
+                    st.caption(f"Вы заходите {df['cents_3'][0]} {form_noun(df['cents_3'][0], st.secrets.cur['DAY']['forms'])} подряд")
                     
             else:
                 if st.session_state.card_no[4:7] in ["584"]:
@@ -864,7 +864,7 @@ if st.session_state.logged_in == True:
                     st.metric(label="Бонусный баланс :", 
                         value=f"*** {st.secrets.cur['BON']['forms'][2]}",
                         border=True)
-                    st.caption(f"Вы заходите {df['cents_3'][0]} {form_noun(df['cents_3'][0], st.secrets.cur['DAY']['forms'])}")
+                    st.caption(f"Вы заходите {df['cents_3'][0]} {form_noun(df['cents_3'][0], st.secrets.cur['DAY']['forms'])} подряд")
                     
                 
 
