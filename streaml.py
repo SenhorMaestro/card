@@ -671,21 +671,8 @@ if st.session_state.logged_in == True:
         if st.session_state.card_no[4:7] in ['127', '338', '584']:
             last_login_time = df['play_start'][0]
             last_login_time = check_null(last_login_time)
-            
-
-        # if st.session_state.card_no[4:7] in ['127', '338']:
-        #     last_login_time = df['play_start'][0]
-            #st.write( (datetime.now() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S") ) 
-            # update_time = datetime.now().replace(hour=3, minute=0, second=0, microsecond=0) 
-            # zero_time = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            # if dev_mode:
-            #     st.write(last_login_time)
-            #     st.write(update_time)
-            #     st.write(zero_time)
-            
-            #last_login_and_reset(last_login_time)
-
-           first_enter_block(last_login_time, df) 
+           
+            first_enter_block(last_login_time, df) 
             
 
             # days_in_a_row_counter, should_update = days_in_a_row_bonus(last_login_time, df['cents_3'][0])
