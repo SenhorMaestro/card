@@ -105,7 +105,54 @@ def form_noun(number, noun_forms):
     else: #not int
         return noun_forms[1]
     
-def balance_updating(last_login_time):
+def days_in_a_row_bonus(last_login, days_in_a_row_counter):
+    """
+    days_in_a_row_counter >= 1 (не может быть 0)
+    """
+
+    delta = datetime.now().date() - last_login.date()
+    num_days = delta.days
+    #print(num_days)
+    if num_days == 0:
+        #пользователь заходил сегодня, бонус уже был начислен ранее сегодня
+        #should_update = False (совпадает с флагом should_update_last_login)
+        pass 
+    elif num_days == 1:
+        days_in_a_row_counter += 1
+        #should_update = True (совпадает с флагом should_update_last_login)
+        #пользователь заходил вчера, начисление бонуса
+    elif num_days > 1:
+        days_in_a_row_counter = 1
+        #should_update = True (совпадает с флагом should_update_last_login)
+        #пользователь не заходил несколько дней подряд, счётчик дней подряд сброшен, бонус не начисляется
+    return days_in_a_row_counter #, should_update
+
+def num_of_bonuses(days_in_a_row_counter, should_update):
+    """
+    Сколько бонусов начислить в зависимости от дня захода подряд
+    """
+    d = {1: 0,
+         2: 1,
+         3: 2,
+         4: 2,
+         5: 3, 
+         6: 3,
+         7: 5
+         }
+
+    if should_update == True:
+        if days_in_a_row_counter == 1:
+            bons = 0
+        elif days_in_a_row_counter > 1 and days_in_a_row_counter < 7:
+            bons = d[days_in_a_row_counter]
+        elif days_in_a_row_counter >= 7:
+            bons = d[7]
+    else:
+        bons = 0
+
+    return bons
+    
+def last_login_and_reset(last_login_time):
      
     last_login_utc = last_login_time - timedelta(hours=st.secrets['tzs']['hours_to_utc'])
     now_utc = datetime.now() - timedelta(hours=st.secrets['tzs']['hours_to_utc'])
@@ -114,26 +161,37 @@ def balance_updating(last_login_time):
         st.write(f"now_utc: {now_utc}")
 
     if now_utc.date() > last_login_utc.date():
-        # вход был вчера
+        # последний вход был вчера или ранее (сегодня вход первый раз)
         if dev_mode:
             st.write("situation1")
         update_last_login = True
         reset_balance = True
-    else:
+    else: # уже был вход сегодня
         if dev_mode: 
             st.write("situation2")
         update_last_login = False
         reset_balance = False
 
-        
-    if update_last_login == True and reset_balance == True:
+    return update_last_login, reset_balance
+
+def login_upd(reset_balance, extra_queries):    
+        """
+        сброс баланса в 0 и обновление времени входа
+        """    
+    #if update_last_login == True:
+        if reset_balance == True:
+            reset_balance_line = ',balance = 0'
+        else: 
+            reset_balance_line = ''
+
         if dev_mode:
             st.write("sql1")
         with conn.session as s:
             task = f'''UPDATE cards
             SET
-                play_start = NOW() + INTERVAL '{st.secrets['tzs']['HOURS']} hours',
-                balance = 0
+                play_start = NOW() + INTERVAL '{st.secrets['tzs']['HOURS']} hours'
+                {reset_balance_line}
+                {extra_queries}
             WHERE card_no = :card_no;'''
 
             s.execute(text(task), 
@@ -141,18 +199,29 @@ def balance_updating(last_login_time):
             params={"card_no": st.session_state.card_no},)
         
             s.commit()
-    # elif update_last_login == True and reset_balance == False:
-    #     st.write("sql2")
-    #     with conn.session as s:
-    #         task = '''UPDATE cards
-    #         SET
-    #             play_start = NOW() + INTERVAL '3 hours'
-    #         WHERE card_no = :card_no;'''
 
-    #         s.execute(text(task), 
-    #         #ttl="10m",
-    #         params={"card_no": st.session_state.card_no},)
-    #         s.commit()
+
+def first_enter_block(last_login_time, df):
+    '''
+    Логика ежедневного сброса баланса, обновления времени входа и начисления бонусов
+    '''
+    
+    #нужно ли обновить последний вход и сделать сброс баланса
+    should_update_last_login, reset_balance = last_login_and_reset(last_login_time)
+
+    if should_update_last_login:
+        #обновление бонусов за вход
+        days_in_a_row_counter  = days_in_a_row_bonus(last_login_time, df['cents_3'][0])
+        bons = num_of_bonuses(days_in_a_row_counter, should_update_last_login)
+
+        new_bons = df['third_balance'][0] + bons
+        extra_queries = f',third_balance = {new_bons}, cents_3 = {days_in_a_row_counter}'
+    
+        login_upd(reset_balance, extra_queries)
+
+        if bons > 0:
+            st.toast(f"Начислены бонусы за вход ({bons} бон.)", icon='🎉')
+
 
 def check_null(last_login_time):
     if last_login_time is None:
@@ -282,17 +351,6 @@ def int_float_calc(balance_int: int, balance_cents: int, amount: float):
     return new_balance_int, new_balance_cents
 
 def upd(balance_name, cents_name, new_balance_int, new_balance_cents, card):
-        #            sign = "-" или "+"
-                    
-        #                      SQL UPDATE cards
-        #                      SET 
-        #                {balance_name} = 
-        #               {balance_name}{sign}{sum_2_int},
-        #                 {cents_name} =
-        #              {cents_name}{sign}{ssum_2_cents}
-
-        #                     WHERE card_no = : card_to 
-        #                                      (Или st.ses.card_no)
 
     with conn.session as s:
         task = f'''UPDATE cards
@@ -435,6 +493,7 @@ if "value5" in st.query_params: #instant_plus_balance
         if dev_mode:
             st.write(df)
             
+        #first_balance_query = f',balance = balance + {str(instant_ammount)}'   
         if st.session_state.card_no[4:7] in ['338']:
             update_second_balance_query = f", second_balance = second_balance + {str(instant_ammount)}"
         else:
@@ -442,7 +501,10 @@ if "value5" in st.query_params: #instant_plus_balance
 
         last_login_time = df['play_start'][0]
         last_login_time =check_null(last_login_time)
-        balance_updating(last_login_time)
+
+        first_enter_block()   
+
+
         with conn.session as s:
             task = f'''UPDATE cards
             SET
@@ -467,11 +529,16 @@ if "value5" in st.query_params: #instant_plus_balance
                         ttl=0,#None, #"10m",
                         params={"card_no": st.session_state.card_no},)
         
-        if df['play_start'][0] is None:
+        last_login_time = df['play_start'][0]
+        #last_login_time =check_null(last_login_time)
+
+        first_enter_block(last_login_time, df)
+        
+        if df['play_reg'][0] is None:
             with conn.session as s:
                 task = f'''UPDATE cards
                         SET 
-                            play_start = NOW()
+                            play_reg = NOW()
                         WHERE card_no = :card_no;'''
 
                 s.execute(text(task), 
@@ -515,8 +582,8 @@ if "value5" in st.query_params: #instant_plus_balance
                             with conn.session as s:
                                 task = f'''UPDATE cards
                                         SET 
-                                        balance = balance - ROUND(EXTRACT(EPOCH FROM (NOW() - play_start)) / 60),
-                                        play_start = NULL
+                                        balance = balance - ROUND(EXTRACT(EPOCH FROM (NOW() - play_reg)) / 60),
+                                        play_reg = NULL
                                         WHERE card_no = :card_no;'''
 
                                 s.execute(text(task), 
@@ -601,7 +668,7 @@ if st.session_state.logged_in == True:
         #st.write(df["balance"][0])
 
         #Проверка непустого значения
-        if st.session_state.card_no[4:7] in ['127', '338']:
+        if st.session_state.card_no[4:7] in ['127', '338', '584']:
             last_login_time = df['play_start'][0]
             last_login_time = check_null(last_login_time)
             
@@ -616,7 +683,17 @@ if st.session_state.logged_in == True:
             #     st.write(update_time)
             #     st.write(zero_time)
             
-            balance_updating(last_login_time)
+            #last_login_and_reset(last_login_time)
+
+        first_enter_block(last_login_time, df) 
+            
+
+            # days_in_a_row_counter, should_update = days_in_a_row_bonus(last_login_time, df['cents_3'][0])
+            # bons = num_of_bonuses(days_in_a_row_counter, should_update)
+            # if should_update:
+            #     new_balance = df['third_balance'][0] + bons
+            #     upd('third_balance', 'cents_3', new_balance, days_in_a_row_counter, st.session_state.card_no)
+            #     st.toast(f"Начислены бонусы за вход ({bons} бон.)", icon='🎉')
 
         if st.session_state.card_no[4:7] in ['777']:
             if datetime.now().month != (df['play_start'][0]).month:
@@ -734,12 +811,19 @@ if st.session_state.logged_in == True:
                         value=f"{df['balance'][0]} {form_noun(df['balance'][0], st.secrets.cur[df['currency'][0]]['forms'])}",
                         border=True)
                     st.metric(label="Всего чокобонусов :", 
-                        value=f"{df['cents_1'][0]} {form_noun(df['cents_1'][0], st.secrets.cur['BON']['forms'])}",
+                        value=f"{df['cents_1'][0]} {form_noun(df['cents_1'][0], st.secrets.cur['CBN']['forms'])}",
                         border=True)
                 else:
                     st.metric(label="Баланс :", 
                         value=f"{df['balance'][0]} {form_noun(df['balance'][0], st.secrets.cur[df['currency'][0]]['forms'])}",
                         border=True)
+                    
+                if st.session_state.card_no[4:7] in ["127","338","584"]:    
+                    st.metric(label="Бонусный баланс :", 
+                        value=f"{df['third_balance'][0]} {form_noun(df['third_balance'][0], st.secrets.cur['BON']['forms'])}",
+                        border=True)
+                    st.caption(f"Вы заходите {df['cents_3'][0]} {form_noun(df['cents_3'][0], st.secrets.cur['DAY']['forms'])}")
+                    
             else:
                 if st.session_state.card_no[4:7] in ["584"]:
                     st.metric(label="Баланс :", 
@@ -769,12 +853,19 @@ if st.session_state.logged_in == True:
                         value=f"*** {st.secrets.cur[df['currency'][0]]['forms'][2]}",
                         border=True)
                     st.metric(label="Всего чокобонусов :", 
-                        value=f"*** {st.secrets.cur['BON']['forms'][2]}",
+                        value=f"*** {st.secrets.cur['CBN']['forms'][2]}",
                         border=True)
                 else:
                     st.metric(label="Баланс :",
                         value=f"*** {st.secrets.cur[df['currency'][0]]['forms'][2]}",
                         border=True)
+                    
+                if st.session_state.card_no[4:7] in ["127","338","584"]:     
+                    st.metric(label="Бонусный баланс :", 
+                        value=f"*** {st.secrets.cur['BON']['forms'][2]}",
+                        border=True)
+                    st.caption(f"Вы заходите {df['cents_3'][0]} {form_noun(df['cents_3'][0], st.secrets.cur['DAY']['forms'])}")
+                    
                 
 
         if st.session_state.card_no[4:7] in ['127']:
