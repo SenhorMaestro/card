@@ -502,7 +502,7 @@ if "value5" in st.query_params: #instant_plus_balance
         last_login_time = df['play_start'][0]
         last_login_time =check_null(last_login_time)
 
-        first_enter_block()   
+        first_enter_block(last_login_time, df) 
 
 
         with conn.session as s:
